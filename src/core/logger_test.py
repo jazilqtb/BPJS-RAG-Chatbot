@@ -4,6 +4,7 @@ from logger import get_logger
 logger = get_logger("LoggerTest")
 
 print("mulai")
+logger.info("mulai")
 
 print("hitung")
 a=1
@@ -13,7 +14,7 @@ print(c)
 
 try:
     d = a+"c"
-except:
-    logger.info("error d")
-logger.info("mulai")
+except Exception as e:
+    logger.error(e)
+logger.info("Program selesai")
 print("mulai selesai")
