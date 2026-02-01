@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     # Path Project
     BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
     DATA_DIR: Path = BASE_DIR / "data"
+    PROMPT_DIR: Path = BASE_DIR / "config" / "prompts.yaml"
 
     # API Keys (Wajib ada di .env)
     GOOGLE_API_KEY: str
@@ -23,10 +24,19 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-# print(f"type(settings.model_config): {type(settings.model_config)}")
-# print(f"settings.model_config: {settings.model_config}")
-# print(f"Path(__file__): {Path(__file__)}")
-# print(f"Path(__file__).resolve(): {Path(__file__).resolve()}")
-# print(f"Path(__file__).resolve().parent: {Path(__file__).resolve().parent}")
-# print(f"Path(__file__).resolve().parent.parent.parent: {Path(__file__).resolve().parent.parent.parent}")
-# print(f"Path(__file__).resolve().parent.parent.parent / data: {Path(__file__).resolve().parent.parent.parent / 'data'}")
+if __name__=="__main__":
+    import yaml
+
+    print(f"type(settings.model_config): {type(settings.model_config)}")
+    print(f"settings.model_config: {settings.model_config}")
+    print(f"Path(__file__): {Path(__file__)}")
+    print(f"Path(__file__).resolve(): {Path(__file__).resolve()}")
+    print(f"Path(__file__).resolve().parent: {Path(__file__).resolve().parent}")
+    print(f"Path(__file__).resolve().parent.parent.parent: {Path(__file__).resolve().parent.parent.parent}")
+    print(f"Path(__file__).resolve().parent.parent.parent / data: {Path(__file__).resolve().parent.parent.parent / 'data'}")
+    print(settings.PROMPT_DIR)
+
+    with open(settings.PROMPT_DIR, 'r') as file:
+        data = yaml.safe_load(file)
+        print(f"prompts({type(data['prompts'])}): {data['prompts']}")
+

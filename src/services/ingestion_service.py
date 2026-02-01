@@ -152,3 +152,7 @@ class IngestionService():
 
         self.logger.info("=== FINISH INGESTION ===")
 
+if __name__ == "__main__":
+    ingestor = IngestionService()
+    ingestor.run()
+
