@@ -11,8 +11,10 @@ dependencies:
   - pip:
     # --- LLM Framework ---
     - langchain
+    - langchain-core
     - langchain-community
     - langchain-openai
+    - langchain-google-genai
     - langchain-text-splitters
     
     # --- Vector Database ---

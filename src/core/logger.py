@@ -3,7 +3,7 @@ import sys
 
 def get_logger(name: str):
     logger = logging.getLogger(name)
-    logger.setLevel(logging.INFO) # The logs that would printed is only INFO and above of it
+    logger.setLevel(logging.ERROR) # The logs that would printed is only INFO and above of it
     
     if not logger.handlers:
         handler = logging.StreamHandler(sys.stdout)

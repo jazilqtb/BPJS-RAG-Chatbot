@@ -15,7 +15,7 @@ class Settings(BaseSettings):
 
     # Model Config
     # Model untuk "Otak" (Reasoning)
-    GENAI_MODEL: str = "models/gemini-2.0-flash" 
+    GENAI_MODEL: str = "models/gemini-2.5-flash" 
     # Model untuk "Penerjemah Vektor" (Ingestion) - CRITICAL ADDITION
     EMBEDDING_MODEL: str = "models/text-embedding-004" 
 
