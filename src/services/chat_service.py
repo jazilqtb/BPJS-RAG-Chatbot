@@ -7,7 +7,6 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnableWithMessageHistory
 from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_core.chat_history import BaseChatMessageHistory
-from langchain_core.runnables import RunnablePassthrough, RunnableLambda
 
 from src.core.config import settings
 from src.core.logger import get_logger
@@ -44,7 +43,7 @@ class ChatService():
             self.logger.error(f"Gagal load prompt: {e}")
             self.system_instruction = "Kamu adalah Kamu adalah asisten AI yang membantu menjawab pertanyaan BPJS."
         
-        # Type hint (Dict[Key type, Val type]) -> 
+        # Type hint (Dict[Key type, Val type])
         self.store: Dict[str, BaseChatMessageHistory] = {}
         self.logger.debug(f"type of self.store: {type(self.store)}")
 
@@ -125,10 +124,3 @@ if __name__ == "__main__":
         # print(f"response ({type(response)}): {response}")
         print(f"response.answer ({type(response.answer)}): {response.answer}")
         # print(f"response.sources ({type(response.sources)}): {response.sources}")
-
-"""
-To Do List
-    1. Pahami akan diisi apa dict self.store
-    2. Pahami BaseChatMassageHistory
-    3. 
-"""

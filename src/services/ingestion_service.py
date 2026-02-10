@@ -1,18 +1,17 @@
 import os
 import shutil
 import time
-from tqdm import tqdm
 
 from typing import List
 
 from langchain_core.documents import Document
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from langchain_text_splitters import RecursiveCharacterTextSplitter # untuk memecah text
-from langchain_community.document_loaders import PyPDFLoader # untuk baca file
-from langchain_chroma import Chroma # untuk database vector
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_chroma import Chroma
 
-from src.core.config import settings # akses konfigurasi sistem
-from src.core.logger import get_logger # akses sistem logging
+from src.core.config import settings 
+from src.core.logger import get_logger
 
 class IngestionService():
     def __init__(self):
@@ -25,15 +24,6 @@ class IngestionService():
         self.chunk_overlap = 200
     
     def load_pdfs(self) -> List[Document]:
-        """
-        Docstring for load_pdfs
-            1. Cek apakah folder PDF ada? Jika tidak, log error dan return list kosong.
-            2. Looping semua file di folder tersebut yang berakhiran .pdf.
-            3. Gunakan PyPDFLoader untuk memuat setiap file.
-            4. Gabungkan semua hasil load (docs) ke dalam satu list besar.
-            5. Return list dokumen tersebut.
-        Hint: Gunakan os.listdir atau pathlib.Path.glob.
-        """
         documents = []
 
         if not os.path.exists(self.pdf_dir):
@@ -55,15 +45,6 @@ class IngestionService():
         return documents
         
     def split_documents(self, documents: List[Document]) -> List[Document]:
-        """
-        Docstring for split_documents
-        Logic:
-            1. Inisialisasi RecursiveCharacterTextSplitter.
-            2. Set chunk_size=1000 (agar konteks cukup luas).
-            3. Set chunk_overlap=200 (agar kalimat di perbatasan tidak terpotong maknanya).
-            4. Jalankan fungsi split pada input documents.
-            5. Return hasil split (chunks).
-        """
         if not documents:
             self.logger.info("The documents for splitted is empty")
             return []
@@ -102,19 +83,6 @@ class IngestionService():
         return chunks
     
     def save_to_chroma(self, chunks: List[Document]):
-        """
-        1. Clean Up: Hapus folder DB lama jika ada (shutil.rmtree).
-        2. Instansiasi Embedding Model: Gunakan class GoogleGenerativeAIEmbeddings. Parameternya:
-            a. model: Ambil dari settings.EMBEDDING_MODEL (Isinya: models/text-embedding-004).
-            b. google_api_key: Ambil dari settings.GOOGLE_API_KEY.
-            c. task_type: Isi dengan string "retrieval_document".
-                i. Kenapa? Sesuai dokumentasi Google: "Embeddings optimized for document search."
-        3. Simpan ke Chroma: Panggil Chroma.from_documents(...).
-            a. documents: chunks.
-            b. embedding: object embedding google tadi.
-            c. persist_directory: path dari settings.
-        """
-
         if not chunks:
             self.logger.warning("Chunks is empty.")
             return
@@ -132,16 +100,11 @@ class IngestionService():
                 task_type="retrieval_document",
                 google_api_key=settings.GOOGLE_API_KEY)
             
-            # 3. Inisialisasi Chroma (Kosong dulu / Persistent)
-            # Kita tidak langsung pakai from_documents agar bisa kontrol batching
             vector_store = Chroma(
                 embedding_function=embeddings,
                 persist_directory=str(self.db_dir)
             )
 
-            # 4. Batching Strategy
-            # Google Free Tier Limit: 100 Request / menit.
-            # Kita set BATCH_SIZE = 80 (Safety Margin)
             BATCH_SIZE = 20
             total_chunks = len(chunks)
             
@@ -157,18 +120,15 @@ class IngestionService():
                 for attempt in range(max_retries):
                     try:
                         vector_store.add_documents(documents=batch)
-                        # Jika sukses, beri jeda singkat (2 detik) agar nafas server lega
                         time.sleep(2) 
-                        break # Keluar dari loop retry, lanjut ke batch berikutnya
+                        break
                     except Exception as e:
                         error_msg = str(e)
-                        # Cek apakah errornya karena Kuota (429)
                         if "429" in error_msg:
-                            wait_time = (attempt + 1) * 20 # Backoff: 20s, 40s, 60s
+                            wait_time = (attempt + 1) * 20
                             self.logger.warning(f"Hit Rate Limit (429). Retrying in {wait_time}s... (Attempt {attempt+1}/{max_retries})")
                             time.sleep(wait_time)
                         else:
-                            # Jika error lain (misal koneksi putus), log dan raise
                             self.logger.error(f"Critical Error on batch {i}: {e}")
                             raise e
             self.logger.info(f"Successfully saved all {total_chunks} vectors to {str(self.db_dir)}")

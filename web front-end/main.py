@@ -3,7 +3,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join('..')))
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.domain.schemas import ChatRequest, ChatResponse
 from src.services.chat_service import ChatService

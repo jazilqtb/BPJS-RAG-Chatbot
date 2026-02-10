@@ -54,7 +54,7 @@ if __name__ == "__main__":
     if results:
         final_text = rag.format_docs(results)
         print(f"\n====== HASIL PENCARIAN UNTUK: '{test_query}' ======")
-        print(final_text + "...") # Print 500 huruf pertama saja biar tidak kepanjangan
+        print(final_text + "...")
     else:
         print("Tidak ada dokumen ditemukan.")
 
