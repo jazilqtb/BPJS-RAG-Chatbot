@@ -1,5 +1,8 @@
 import os
 import shutil
+import time
+from tqdm import tqdm
+
 from typing import List
 
 from langchain_core.documents import Document
@@ -128,13 +131,47 @@ class IngestionService():
                 model=settings.EMBEDDING_MODEL,
                 task_type="retrieval_document",
                 google_api_key=settings.GOOGLE_API_KEY)
-
-            Chroma.from_documents(
-                documents=chunks,
-                embedding=embeddings,
+            
+            # 3. Inisialisasi Chroma (Kosong dulu / Persistent)
+            # Kita tidak langsung pakai from_documents agar bisa kontrol batching
+            vector_store = Chroma(
+                embedding_function=embeddings,
                 persist_directory=str(self.db_dir)
             )
-            self.logger.info(f"Successfully saved {len(chunks)} vector to {str(self.db_dir)}")
+
+            # 4. Batching Strategy
+            # Google Free Tier Limit: 100 Request / menit.
+            # Kita set BATCH_SIZE = 80 (Safety Margin)
+            BATCH_SIZE = 20
+            total_chunks = len(chunks)
+            
+            self.logger.info(f"Total chunks: {total_chunks}. Strategy: Batch {BATCH_SIZE} with Retry Logic.")
+
+            for i in range(0, total_chunks, BATCH_SIZE):
+                batch = chunks[i : i + BATCH_SIZE]
+                
+                self.logger.info(f"Processing batch {i} to {i + len(batch)}...")
+                
+                max_retries = 3
+
+                for attempt in range(max_retries):
+                    try:
+                        vector_store.add_documents(documents=batch)
+                        # Jika sukses, beri jeda singkat (2 detik) agar nafas server lega
+                        time.sleep(2) 
+                        break # Keluar dari loop retry, lanjut ke batch berikutnya
+                    except Exception as e:
+                        error_msg = str(e)
+                        # Cek apakah errornya karena Kuota (429)
+                        if "429" in error_msg:
+                            wait_time = (attempt + 1) * 20 # Backoff: 20s, 40s, 60s
+                            self.logger.warning(f"Hit Rate Limit (429). Retrying in {wait_time}s... (Attempt {attempt+1}/{max_retries})")
+                            time.sleep(wait_time)
+                        else:
+                            # Jika error lain (misal koneksi putus), log dan raise
+                            self.logger.error(f"Critical Error on batch {i}: {e}")
+                            raise e
+            self.logger.info(f"Successfully saved all {total_chunks} vectors to {str(self.db_dir)}")
         except Exception as e:
             self.logger.error(f"Failed saved vector: {e}")
 

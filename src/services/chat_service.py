@@ -71,7 +71,7 @@ class ChatService():
             ("human", "{input}"),
         ])
 
-        self.logger.debug(f"prompt: {prompt}")
+        # self.logger.debug(f"prompt: {prompt}")
 
         # Build Chain
         # Chain: Prompt -> LLM -> Ubah ke String

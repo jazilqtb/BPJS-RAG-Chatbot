@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Command Center</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            /* Palette Warna: Dark Cyberpunk / Engineering Clean */
+            --bg-body: #09090b; /* Hampir hitam */
+            --bg-sidebar: #18181b;
+            --bg-chat: #09090b;
+            --bg-input: #27272a;
+            --border-color: #3f3f46;
+            
+            --accent-primary: #06b6d4; /* Cyan - melambangkan AI/Robotics */
+            --accent-secondary: #8b5cf6; /* Violet - melambangkan kedalaman/wisdom */
+            --accent-glow: rgba(6, 182, 212, 0.3);
+
+            --text-primary: #e4e4e7;
+            --text-secondary: #a1a1aa;
+            
+            --user-bubble: #27272a;
+            --bot-bubble: transparent; /* Bot blend dengan background */
+            
+            --font-main: 'Inter', sans-serif;
+            --font-code: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border-color) transparent;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* --- Sidebar --- */
+        .sidebar {
+            width: 300px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 10;
+        }
+
+        .sidebar.collapsed {
+            transform: translateX(-100%);
+            position: absolute;
+            height: 100%;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: var(--font-code);
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--accent-primary);
+            margin-bottom: 2rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .brand i {
+            font-size: 1.4rem;
+            text-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .new-chat-btn {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            color: white;
+            font-family: var(--font-main);
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .new-chat-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .history-list {
+            margin-top: 2rem;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            padding: 10px;
+            border-radius: 6px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .history-item:hover {
+            background-color: rgba(255,255,255,0.05);
+            color: var(--text-primary);
+        }
+
+        .history-item i {
+            font-size: 0.8rem;
+        }
+
+        /* --- Main Content --- */
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background: radial-gradient(circle at 50% 10%, #1a1a2e 0%, var(--bg-body) 60%);
+        }
+
+        .header {
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            /* Glassmorphism Header */
+            background: rgba(9, 9, 11, 0.7);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            position: absolute;
+            top: 0;
+            width: 100%;
+            z-index: 5;
+        }
+
+        .menu-toggle {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .model-select {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-family: var(--font-code);
+            cursor: pointer;
+        }
+
+        /* --- Chat Area --- */
+        .chat-container {
+            flex-grow: 1;
+            padding: 6rem 1rem 2rem 1rem;
+            overflow-y: auto;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+            scroll-behavior: smooth;
+        }
+
+        .message-wrapper {
+            display: flex;
+            margin-bottom: 1.5rem;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 6px; /* Kotak rounded untuk kesan teknikal */
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .bot-avatar {
+            background: linear-gradient(135deg, var(--accent-primary), #0e7490);
+            color: white;
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        .user-avatar {
+            background: var(--user-bubble);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .message-content {
+            line-height: 1.6;
+            font-size: 1rem;
+            max-width: 100%;
+        }
+
+        .user-wrapper {
+            flex-direction: row-reverse;
+        }
+
+        .user-wrapper .avatar {
+            margin-right: 0;
+            margin-left: 15px;
+        }
+
+        .user-bubble {
+            background-color: var(--user-bubble);
+            padding: 10px 18px;
+            border-radius: 12px 2px 12px 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .bot-bubble {
+            background-color: var(--bot-bubble);
+            padding: 0; /* Bot text blends with background like modern AI interfaces */
+            color: var(--text-primary);
+        }
+        
+        /* Typing Indicator */
+        .typing-indicator {
+            display: inline-flex;
+            gap: 4px;
+            padding: 10px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 4px;
+            margin-left: 50px;
+            margin-bottom: 20px;
+            display: none; /* Hidden by default */
+        }
+        
+        .dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        /* --- Input Area --- */
+        .input-area {
+            padding: 2rem;
+            background: linear-gradient(to top, var(--bg-body) 80%, transparent);
+            position: relative;
+            z-index: 10;
+        }
+
+        .input-container {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            background-color: var(--bg-input);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            transition: border-color 0.3s, box-shadow 0.3s;
+            display: flex;
+            align-items: flex-end;
+            padding: 10px;
+        }
+
+        .input-container:focus-within {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.15);
+        }
+
+        textarea {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            font-size: 1rem;
+            resize: none;
+            padding: 10px;
+            max-height: 200px;
+            outline: none;
+            height: 44px; /* Default height */
+        }
+        
+        textarea::placeholder {
+            color: rgba(255,255,255,0.3);
+        }
+
+        .input-actions {
+            display: flex;
+            gap: 8px;
+            padding-bottom: 4px;
+            padding-right: 4px;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: color 0.2s, background 0.2s;
+        }
+
+        .action-btn:hover {
+            background-color: rgba(255,255,255,0.1);
+            color: var(--text-primary);
+        }
+
+        .send-btn {
+            background-color: var(--text-primary); /* White/Light Grey */
+            color: var(--bg-body);
+            border-radius: 8px;
+            padding: 8px 12px;
+        }
+        
+        .send-btn:hover {
+            background-color: var(--accent-primary);
+        }
+        
+        .send-btn:disabled {
+            background-color: var(--border-color);
+            cursor: not-allowed;
+        }
+
+        /* Footer disclaimer */
+        .disclaimer {
+            text-align: center;
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.2);
+            margin-top: 10px;
+            font-family: var(--font-code);
+        }
+        
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: absolute;
+                height: 100%;
+                transform: translateX(-100%);
+            }
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            .chat-container {
+                padding-top: 5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar" id="sidebar">
+        <div class="brand">
+            <i class="fas fa-robot"></i>
+            <span>JAZIL BOT V1</span>
+        </div>
+        
+        <button class="new-chat-btn" onclick="resetChat()">
+            <i class="fas fa-plus"></i> New Session
+        </button>
+        
+        <div class="history-list">
+            <div class="history-item"><i class="far fa-comment-alt"></i> Thesis: SAC Control</div>
+            <div class="history-item"><i class="far fa-comment-alt"></i> Vision-Language Model</div>
+            <div class="history-item"><i class="far fa-comment-alt"></i> Naruto Character Analysis</div>
+            <div class="history-item"><i class="far fa-comment-alt"></i> Renovasi Rumah Budget</div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <button class="menu-toggle" id="menuToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="model-select">
+                Model: Gemini 3 Pro (Eng-Mode)
+            </div>
+            <div style="width: 24px;"></div> </div>
+
+        <div class="chat-container" id="chatContainer">
+            <div class="message-wrapper">
+                <div class="avatar bot-avatar"><i class="fas fa-brain"></i></div>
+                <div class="message-content bot-bubble">
+                    <p><strong>System Online.</strong></p>
+                    <p style="margin-top: 8px;">Selamat datang kembali. Protokol siap untuk membantu penelitian Robotika, analisis data, atau diskusi strategis. Apa yang sedang kita kerjakan hari ini?</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="typing-indicator" id="typingIndicator">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+
+        <div class="input-area">
+            <div class="input-container">
+                <textarea id="userInput" placeholder="Masukkan perintah atau pertanyaan..." rows="1" oninput="autoResize(this)"></textarea>
+                <div class="input-actions">
+                    <button class="action-btn" title="Upload Image/Code"><i class="fas fa-paperclip"></i></button>
+                    <button class="action-btn" title="Voice Input"><i class="fas fa-microphone"></i></button>
+                    <button class="action-btn send-btn" id="sendBtn" onclick="sendMessage()"><i class="fas fa-arrow-up"></i></button>
+                </div>
+            </div>
+            <div class="disclaimer">
+                Nexus AI dapat membuat kesalahan. Selalu verifikasi kode dan fakta penting.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Sidebar Toggle Logic ---
+        const sidebar = document.getElementById('sidebar');
+        const menuToggle = document.getElementById('menuToggle');
+        const chatContainer = document.getElementById('chatContainer');
+        const typingIndicator = document.getElementById('typingIndicator');
+
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            // Toggle class 'active' untuk mobile view
+            sidebar.classList.toggle('active');
+        });
+
+        // --- Auto Resize Textarea ---
+        function autoResize(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+            if(textarea.value === '') {
+                textarea.style.height = '44px';
+            }
+        }
+
+        // --- Send Message Logic ---
+        const userInput = document.getElementById('userInput');
+        
+        // Allow sending with Enter (Shift+Enter for new line)
+        userInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        function sendMessage() {
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            // 1. Add User Message
+            addMessage(text, 'user');
+            userInput.value = '';
+            userInput.style.height = '44px'; // Reset height
+
+            // 2. Show Typing Indicator
+            showTyping(true);
+
+            // 3. Simulate Bot Response (Delay)
+            setTimeout(() => {
+                showTyping(false);
+                const botResponse = generateMockResponse(text);
+                addMessage(botResponse, 'bot');
+            }, 1500 + Math.random() * 1000); // Random delay 1.5s - 2.5s
+        }
+
+        function addMessage(text, sender) {
+            const wrapper = document.createElement('div');
+            wrapper.classList.add('message-wrapper');
+            if (sender === 'user') wrapper.classList.add('user-wrapper');
+
+            // Avatar Logic
+            const avatar = document.createElement('div');
+            avatar.classList.add('avatar');
+            if (sender === 'bot') {
+                avatar.classList.add('bot-avatar');
+                avatar.innerHTML = '<i class="fas fa-brain"></i>';
+            } else {
+                avatar.classList.add('user-avatar');
+                avatar.innerHTML = '<i class="fas fa-user"></i>';
+            }
+
+            // Bubble Logic
+            const content = document.createElement('div');
+            content.classList.add('message-content');
+            if (sender === 'user') {
+                content.classList.add('user-bubble');
+                content.textContent = text;
+            } else {
+                content.classList.add('bot-bubble');
+                // Allow basic HTML for bot (simulating bolding/code)
+                content.innerHTML = text; 
+            }
+
+            // Append Order
+            if (sender === 'user') {
+                wrapper.appendChild(content); // Bubble first (right aligned logic handled by flex-direction)
+                wrapper.appendChild(avatar);
+            } else {
+                wrapper.appendChild(avatar);
+                wrapper.appendChild(content);
+            }
+
+            chatContainer.appendChild(wrapper);
+            
+            // Auto Scroll to bottom
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function showTyping(show) {
+            if(show) {
+                typingIndicator.style.display = 'inline-flex';
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            } else {
+                typingIndicator.style.display = 'none';
+            }
+        }
+
+        // --- Mock Response Logic (Just for Demo) ---
+        function generateMockResponse(input) {
+            const lowerInput = input.toLowerCase();
+            
+            if (lowerInput.includes('halo') || lowerInput.includes('hi')) {
+                return "Halo. Ada update terbaru mengenai proyek portfolio atau kita akan membahas topik lain hari ini?";
+            }
+            if (lowerInput.includes('code') || lowerInput.includes('python')) {
+                return `Tentu, berikut adalah kerangka dasar yang Anda minta:<br><br>
+                        <div style="background:#1e1e1e; padding:15px; border-radius:8px; font-family:'JetBrains Mono'; font-size:0.9em; color:#d4d4d4; overflow-x:auto;">
+                            <span style="color:#c586c0">def</span> <span style="color:#dcdcaa">init_robot</span>():<br>
+                            &nbsp;&nbsp;sensors = <span style="color:#ce9178">"lidar"</span><br>
+                            &nbsp;&nbsp;<span style="color:#c586c0">return</span> Status.OK
+                        </div><br>
+                        Silakan disesuaikan dengan parameter sistem Anda.`;
+            }
+            if (lowerInput.includes('naruto')) {
+                return "Analisis menarik. Jika kita melihat dari perspektif strategi militer, keputusan Hokage Ke-2 sebenarnya sangat pragmatis, meskipun kontroversial secara moral.";
+            }
+            return "Saya memproses input tersebut. Mengingat kompleksitasnya, kita mungkin perlu memecahnya menjadi langkah-langkah logis. Bisa berikan detail tambahan?";
+        }
+        
+        function resetChat() {
+            chatContainer.innerHTML = `
+            <div class="message-wrapper">
+                <div class="avatar bot-avatar"><i class="fas fa-brain"></i></div>
+                <div class="message-content bot-bubble">
+                    <p><strong>System Online.</strong></p>
+                    <p style="margin-top: 8px;">Sesi baru dimulai. Memuat konteks engineering...</p>
+                </div>
+            </div>`;
+        }
+    </script>
+</body>
+</html>

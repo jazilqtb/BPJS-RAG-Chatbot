@@ -29,7 +29,9 @@ class RAGService():
     def search(self, query: str, k: int=3) -> List[Document]:
         self.logger.info(f"Searching for query: '{query}'")
         try:
+            self.logger.debug("Mulai jalankan pencarian context")
             doc_result = self.vector_store.similarity_search(query, k=k)
+            self.logger.debug("Selesai menjalankan pencarian contect")
             self.logger.info(f"Found {len(doc_result)} document results")
             return doc_result
         except Exception as e:
